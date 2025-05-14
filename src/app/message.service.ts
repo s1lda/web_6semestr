@@ -1,14 +1,18 @@
 import { Injectable } from '@angular/core';
+import { BehaviorSubject } from 'rxjs';
 
+// Лабораторная работа 4: Переделан сервис для работы с Observable
 @Injectable({ providedIn: 'root' })
 export class MessageService {
-  messages: string[] = [];
+  private messagesSubject = new BehaviorSubject<string[]>([]);
+  messages$ = this.messagesSubject.asObservable();
 
   add(message: string) {
-    this.messages.push(message);
+    const currentMessages = this.messagesSubject.value;
+    this.messagesSubject.next([...currentMessages, message]);
   }
 
   clear() {
-    this.messages = [];
+    this.messagesSubject.next([]);
   }
 }

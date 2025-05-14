@@ -1,8 +1,10 @@
 import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Observable, map } from 'rxjs';
 import { Hero } from '../hero';
 import { HeroService } from '../hero.service';
 
 // Лабораторная работа 3: Добавлена стратегия OnPush 
+// Лабораторная работа 4: Переход на async pipe
 @Component({
   selector: 'app-dashboard',
   templateUrl: './dashboard.component.html',
@@ -10,16 +12,14 @@ import { HeroService } from '../hero.service';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DashboardComponent implements OnInit {
-  heroes: Hero[] = [];
+  heroes$: Observable<Hero[]>;
 
-  constructor(private heroService: HeroService) { }
-
-  ngOnInit(): void {
-    this.getHeroes();
+  constructor(private heroService: HeroService) {
+    this.heroes$ = this.heroService.getHeroes()
+      .pipe(
+        map(heroes => heroes.slice(1, 5))
+      );
   }
 
-  getHeroes(): void {
-    this.heroService.getHeroes()
-      .subscribe(heroes => this.heroes = heroes.slice(1, 5));
-  }
+  ngOnInit(): void {}
 }

@@ -1,21 +1,25 @@
-import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy, OnDestroy } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { Location } from '@angular/common';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Observable, Subject } from 'rxjs';
+import { takeUntil, switchMap, map } from 'rxjs/operators';
 
 import { Hero } from '../hero';
 import { HeroService } from '../hero.service';
 
 // Лабораторная работа 3: Добавлена стратегия OnPush 
+// Лабораторная работа 4: Добавлено управление подписками
 @Component({
   selector: 'app-hero-detail',
   templateUrl: './hero-detail.component.html',
   styleUrls: [ './hero-detail.component.css' ],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class HeroDetailComponent implements OnInit {
-  hero: Hero | undefined;
+export class HeroDetailComponent implements OnInit, OnDestroy {
+  hero$: Observable<Hero>;
   heroForm: FormGroup;
+  private destroy$ = new Subject<void>();
 
   constructor(
     private route: ActivatedRoute,
@@ -32,19 +36,20 @@ export class HeroDetailComponent implements OnInit {
       description: ['', [Validators.required, Validators.minLength(10)]],
       birthDate: ['', Validators.required]
     });
+
+    // Инициализируем hero$ в конструкторе
+    this.hero$ = this.route.paramMap.pipe(
+      map(params => parseInt(params.get('id')!, 10)),
+      switchMap(id => this.heroService.getHero(id)),
+      takeUntil(this.destroy$)
+    );
   }
 
   ngOnInit(): void {
-    this.getHero();
-  }
-
-  getHero(): void {
-    const id = parseInt(this.route.snapshot.paramMap.get('id')!, 10);
-    this.heroService.getHero(id)
-      .subscribe(hero => {
-        this.hero = hero;
-        this.heroForm.patchValue(hero);
-      });
+    // Подписываемся на hero$ для обновления формы
+    this.hero$.subscribe(hero => {
+      this.heroForm.patchValue(hero);
+    });
   }
 
   goBack(): void {
@@ -52,10 +57,16 @@ export class HeroDetailComponent implements OnInit {
   }
 
   save(): void {
-    if (this.heroForm.valid && this.hero) {
-      const updatedHero = { ...this.hero, ...this.heroForm.value };
+    if (this.heroForm.valid) {
+      const updatedHero = this.heroForm.value;
       this.heroService.updateHero(updatedHero)
+        .pipe(takeUntil(this.destroy$))
         .subscribe(() => this.goBack());
     }
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 }
