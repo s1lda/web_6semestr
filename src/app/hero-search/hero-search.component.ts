@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 
 import { Observable, Subject } from 'rxjs';
 
@@ -9,10 +9,12 @@ import {
 import { Hero } from '../hero';
 import { HeroService } from '../hero.service';
 
+// Лабораторная работа 3: Добавлена стратегия OnPush 
 @Component({
   selector: 'app-hero-search',
   templateUrl: './hero-search.component.html',
-  styleUrls: [ './hero-search.component.css' ]
+  styleUrls: [ './hero-search.component.css' ],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class HeroSearchComponent implements OnInit {
   heroes$!: Observable<Hero[]>;
